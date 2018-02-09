@@ -41,7 +41,9 @@ t: 0 (+1 twists on y-axis moving a above b)
 
 
 const CUBE_SIDE_LENGTH = 6;
+const DOTS_PER_BLOCK = 4;
 const NUM_BLOCKS = 54;
+const MAX_TRIES = 1000;
 
 
 
@@ -320,6 +322,11 @@ class Cube {
         }
     }
 
+    getCompleteness() {
+        const numUsedBlocks = Object.keys(this.blocks).length;
+        return `${numUsedBlocks}/${NUM_BLOCKS} t-tetracubes ---- ${numUsedBlocks * DOTS_PER_BLOCK}/${NUM_BLOCKS * DOTS_PER_BLOCK} squrxls`;
+    }
+
     log() {
         this.matrix.forEach((layer, x) => {
             console.log(`layer ${x}`);
@@ -330,15 +337,12 @@ class Cube {
 
         console.log('blocks:', this.blocks);
 
-        const numUsedPieces = Object.keys(this.blocks).length;
-        const totalPieces = Math.pow(this.s, 3);
-
-        
+        console.log(this.getCompleteness());
     }
 }
 
 // 54 unique characters (for simpler console output)
-const ids = 'A;lk2570CDEFGHIJKLM9gv83m[x]abcdefgBU@#$%*'.split('');
+const ids = 'A;lk2570CDEFGHIJKLM9gv83m[x]abcdefgBU@#$z'.split('');
 
 /*
 
@@ -346,13 +350,15 @@ void main()
 
 */
 
-function makeAndAddBlock(cube, blockId) {
+function makeAndAddBlock(cube, blockId, tries = 0) {
     var block = new RandomBlock(blockId);
 
     if (cube.tryAddBlock(block)) {
         return true;
     } else {
-        makeAndAddBlock(cube, blockId);
+        if (tries < MAX_TRIES) {
+            return makeAndAddBlock(cube, blockId, tries++);
+        }
     }
 }
 
@@ -364,7 +370,9 @@ $(document).ready(function() {
 
     // add some blocks
     ids.forEach(id => {
-        makeAndAddBlock(cube, id);
+        if (makeAndAddBlock(cube, id)) {
+            console.log(`Placed ${id}`);
+        }
     });
     cube.log();
 
