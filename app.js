@@ -229,6 +229,28 @@ class Block {
             return [pt[0] + this.x, pt[1] + this.y, pt[2] + this.z];
         });
     }
+
+    isValid(upperLimit) {
+        for (var pt in this.getAbsoluteDotPositions()) {
+            for (var p in pt) {
+                if (p < 0 || p >= upperLimit) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    log() {
+        var output = "\n";
+
+        this.getAbsoluteDotPositions().forEach(row => {
+            output += row.join(' ') + "\n";
+        });
+
+        console.log(output);
+    }
 }
 
 class RandomBlock {
@@ -249,7 +271,9 @@ class RandomBlock {
     }
 
     static makeValidRandomBlock(id) {
-        return RandomBlock.makeRandomBlock(id);
+        var block = RandomBlock.makeRandomBlock(id);
+
+        return block;
     }
 }
 
@@ -290,12 +314,17 @@ void main()
 */
 
 $(document).ready(function() {
-    var block = new RandomBlock('a');
-    console.log(block.getRelativeDotPositions(), block.getAbsoluteDotPositions());
+
+    var block;
+
+    for (var i = 0; i < 10; i++) {
+        block = new RandomBlock('a' + i);
+        block.log();
+    }
 
     var cube = new Cube(CUBE_SIDE_LENGTH);
     cube.addBlock(block);
-    cube.log();
+    //cube.log();
 });
 
 
