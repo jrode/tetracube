@@ -231,25 +231,22 @@ class Block {
     }
 
     isValid(upperLimit) {
-        for (var pt in this.getAbsoluteDotPositions()) {
-            for (var p in pt) {
-                if (p < 0 || p >= upperLimit) {
-                    return false;
-                }
-            }
-        }
+        var valid = true;
 
-        return true;
+        this.getAbsoluteDotPositions().forEach(pt => {
+            pt.forEach(val => {
+                if (val < 0 || val >= upperLimit) {
+                    valid = false;
+                }
+            });
+        });
+
+        return valid;
     }
 
     log() {
-        var output = "\n";
-
-        this.getAbsoluteDotPositions().forEach(row => {
-            output += row.join(' ') + "\n";
-        });
-
-        console.log(output);
+        console.log(`id: ${this.id} xyx: ${this.x}${this.y}${this.z} rst: ${this.key} isValid: ${this.isValid(CUBE_SIDE_LENGTH)}`);
+        console.log(this.getAbsoluteDotPositions().map(row => row.join(' ')).join("\n"));
     }
 }
 
@@ -271,9 +268,8 @@ class RandomBlock {
     }
 
     static makeValidRandomBlock(id) {
-        var block = RandomBlock.makeRandomBlock(id);
-
-        return block;
+        let block = RandomBlock.makeRandomBlock(id);
+        return block.isValid(CUBE_SIDE_LENGTH) ? block : RandomBlock.makeValidRandomBlock(id);
     }
 }
 
