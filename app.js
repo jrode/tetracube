@@ -2,13 +2,15 @@
 
 /*
 
-Block aka t-tetracube
+Block, aka t-tetracube:
 
     d
     ■
   ■ ■ ■
   a b c
 
+
+A 6x6x6 cube that needs to fit 54 t-tetracubes evenly:
             ____________
           /|            |
          / |            |
@@ -23,7 +25,7 @@ Block aka t-tetracube
     |  /           c/  x           /       ^
     | /         d b/      s = 0 --/        |/ s = 1
     |/___________a/              /         /
-           y               
+           y     (0,0,0)         
 
 positions:                         /       |
 x: 0                      t = 0 --/       -┤  t = 1
@@ -42,6 +44,7 @@ const CUBE_SIDE_LENGTH = 6;
 const NUM_BLOCKS = 54;
 
 
+
 /*
 
 first generate all possible orientations of the t-tetracube
@@ -51,7 +54,8 @@ first generate all possible orientations of the t-tetracube
 // lookup object for possible orientations based on rotation vars
 var orientations = {};
 
-// a t-tetris piece will always have the t pointed at the center of 1 of the 6 sides
+// a t-tetracube will always have the top "t" pointed at the
+// center of 1 of the 6 sides of a 3x3x3 container cube
 const relativePositions = {
     front  : [-1, 0, 0],
     back   : [ 1, 0, 0],
@@ -62,12 +66,20 @@ const relativePositions = {
     center : [ 0, 0, 0],
 };
 
-// an arbitrary framework similar to cardinal directions
+// arbitrary framework akin to cardinal directions
 const directionalValues = [0, 1, 2, 3];
 
+
+//    d
+//    ■
+//  ■ ■ ■
+//  a b c
+
+// accepts 3 spin values and returns an array of 4 (x,y,z) relative points
+// the second point is always [0,0,0] ("b")
 function createRelativeBlock(r, s, t) {
 
-    // this will contain 4 (x,y,z) positions of each part of the t-tetracube
+    // this will contain the 4 (x,y,z) positions of each part of the t-tetracube
     let positions = [];
 
     // stores possible "d" positions based on block orientation
@@ -163,6 +175,7 @@ function createRelativeBlock(r, s, t) {
     return positions;
 }
 
+// creates relative orientation lookup object
 (function buildOrientationsLookup() {
     directionalValues.forEach(r => {
         directionalValues.forEach(s => {
@@ -179,7 +192,7 @@ function createRelativeBlock(r, s, t) {
 
 /*
 
-util
+utils
 
 */
 
