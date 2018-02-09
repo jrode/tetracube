@@ -284,11 +284,36 @@ Cube (i can haz blocks pls)
 class Cube {
     constructor(s) {
         this.s = s;
-        this.matrix = Array(s).fill(Array(s).fill(Array(s).fill(0)));
+        this.matrix = Array(s).fill().map(() => Array(s).fill().map(() => Array(s).fill(0)));
+        this.blocks = {};
     }
 
     addBlock(block) {
+        return this.isValidBlockPlacement(block) && this.placeBlock(block);
+    }
 
+    placeBlock(block) {
+        this.blocks[block.id] = block;
+        block.getAbsoluteDotPositions().forEach(pt => {
+            this.matrix[pt[0]][pt[1]][pt[2]] = block.id;
+        });
+    }
+
+    removeBlock(blockId) {
+        this.blocks[blockId].getAbsoluteDotPositions().forEach(pt => {
+            this.matrix[pt[0]][pt[1]][pt[2]] = 0;
+        });
+        delete this.blocks[blockId];
+    }
+
+    isValidBlockPlacement(block) {
+        var valid = true;
+        block.getAbsoluteDotPositions().forEach(pt => {
+            if (this.matrix[pt[0]][pt[1]][pt[2]]) {
+                valid = false;
+            }
+        });
+        return valid;
     }
 
     log() {
@@ -298,6 +323,7 @@ class Cube {
                 console.log(`l${x} r${y} ${JSON.stringify(row)}`);
             });
         });
+        console.log(this.blocks);
     }
 }
 
@@ -311,16 +337,23 @@ void main()
 
 $(document).ready(function() {
 
-    var block;
-
-    for (var i = 0; i < 10; i++) {
-        block = new RandomBlock('a' + i);
-        block.log();
-    }
-
+    // create a cube
     var cube = new Cube(CUBE_SIDE_LENGTH);
-    cube.addBlock(block);
-    //cube.log();
+    cube.log();
+
+    // add some blocks
+    for (var i = 0; i < 100; i++) {
+        var block = new RandomBlock('a' + i);
+        cube.addBlock(block);
+    }
+    cube.log();
+
+    // remove all the blocks
+    for (var blockId in cube.blocks) {
+        cube.removeBlock(blockId);
+    }
+    cube.log();
+
 });
 
 
