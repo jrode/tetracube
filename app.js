@@ -267,6 +267,7 @@ class RandomBlock {
         );
     }
 
+    // recursively calls self if the new block is invalid
     static makeValidRandomBlock(id) {
         let block = RandomBlock.makeRandomBlock(id);
         return block.isValid(CUBE_SIDE_LENGTH) ? block : RandomBlock.makeValidRandomBlock(id);
@@ -288,22 +289,8 @@ class Cube {
         this.blocks = {};
     }
 
-    addBlock(block) {
+    tryAddBlock(block) {
         return this.isValidBlockPlacement(block) && this.placeBlock(block);
-    }
-
-    placeBlock(block) {
-        this.blocks[block.id] = block;
-        block.getAbsoluteDotPositions().forEach(pt => {
-            this.matrix[pt[0]][pt[1]][pt[2]] = block.id;
-        });
-    }
-
-    removeBlock(blockId) {
-        this.blocks[blockId].getAbsoluteDotPositions().forEach(pt => {
-            this.matrix[pt[0]][pt[1]][pt[2]] = 0;
-        });
-        delete this.blocks[blockId];
     }
 
     isValidBlockPlacement(block) {
@@ -316,6 +303,23 @@ class Cube {
         return valid;
     }
 
+    placeBlock(block) {
+        this.blocks[block.id] = block;
+        block.getAbsoluteDotPositions().forEach(pt => {
+            this.matrix[pt[0]][pt[1]][pt[2]] = block.id;
+        });
+        return true;
+    }
+
+    removeBlock(blockId) {
+        if (this.blocks.hasOwnProperty(blockId)) {
+            this.blocks[blockId].getAbsoluteDotPositions().forEach(pt => {
+                this.matrix[pt[0]][pt[1]][pt[2]] = 0;
+            });
+            delete this.blocks[blockId];
+        }
+    }
+
     log() {
         this.matrix.forEach((layer, x) => {
             console.log(`layer ${x}`);
@@ -323,17 +327,34 @@ class Cube {
                 console.log(`l${x} r${y} ${JSON.stringify(row)}`);
             });
         });
-        console.log(this.blocks);
+
+        console.log('blocks:', this.blocks);
+
+        const numUsedPieces = Object.keys(this.blocks).length;
+        const totalPieces = Math.pow(this.s, 3);
+
+        
     }
 }
 
-
+// 54 unique characters (for simpler console output)
+const ids = 'A;lk2570CDEFGHIJKLM9gv83m[x]abcdefgBU@#$%*'.split('');
 
 /*
 
 void main()
 
 */
+
+function makeAndAddBlock(cube, blockId) {
+    var block = new RandomBlock(blockId);
+
+    if (cube.tryAddBlock(block)) {
+        return true;
+    } else {
+        makeAndAddBlock(cube, blockId);
+    }
+}
 
 $(document).ready(function() {
 
@@ -342,17 +363,16 @@ $(document).ready(function() {
     cube.log();
 
     // add some blocks
-    for (var i = 0; i < 100; i++) {
-        var block = new RandomBlock('a' + i);
-        cube.addBlock(block);
-    }
+    ids.forEach(id => {
+        makeAndAddBlock(cube, id);
+    });
     cube.log();
 
     // remove all the blocks
-    for (var blockId in cube.blocks) {
-        cube.removeBlock(blockId);
-    }
-    cube.log();
+    // for (var blockId in cube.blocks) {
+    //     cube.removeBlock(blockId);
+    // }
+    // cube.log();
 
 });
 
