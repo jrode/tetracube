@@ -204,14 +204,11 @@ class Block {
         this.s = s;
         this.t = t;
         this.id = id;
-    }
-
-    getOrientationKey() {
-        return `${this.r}${this.s}${this.t}`;
+        this.key = `${r}${s}${t}`;
     }
 
     getRelativeDotPositions() {
-        return orientations[this.getOrientationKey()];
+        return orientations[this.key];
     }
 
     getAbsoluteDotPositions() {
