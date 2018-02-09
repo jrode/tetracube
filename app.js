@@ -41,7 +41,7 @@ var count = { numBlocks: 0 };
 var orientations = {};
 var points = {};
 
-function generateDefaultBlock(r, s, t) {
+function createRelativeBlock(r, s, t) {
     var orientationKey = `${r}${s}${t}`;
     orientations[orientationKey] = null;
     points[orientationKey] = [];
@@ -361,7 +361,7 @@ function generatePointsLookup() {
     dirs.forEach(r => {
         dirs.forEach(s => {
             dirs.forEach(t => {
-                generateDefaultBlock(r, s, t);
+                createRelativeBlock(r, s, t);
             });
         });
     });
