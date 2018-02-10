@@ -43,7 +43,8 @@ t: 0 (+1 twists on y-axis moving a above b)
 const CUBE_SIDE_LENGTH = 6;
 const DOTS_PER_BLOCK = 4;
 const NUM_BLOCKS = 54;
-const MAX_TRIES = 1000;
+const NUM_TEST_BLOCKS = 100;
+const MAX_TRIES = 20;
 
 
 
@@ -198,7 +199,7 @@ utils
 
 */
 
-function rand(n) {
+function rand(n = CUBE_SIDE_LENGTH) {
     return Math.floor(Math.random() * n);
 }
 
@@ -232,7 +233,7 @@ class Block {
         });
     }
 
-    isValid(upperLimit) {
+    isValid(upperLimit = CUBE_SIDE_LENGTH) {
         var valid = true;
 
         this.getAbsoluteDotPositions().forEach(pt => {
@@ -247,7 +248,7 @@ class Block {
     }
 
     log() {
-        console.log(`id: ${this.id} xyx: ${this.x}${this.y}${this.z} rst: ${this.key} isValid: ${this.isValid(CUBE_SIDE_LENGTH)}`);
+        console.log(`id: ${this.id} xyx: ${this.x}${this.y}${this.z} rst: ${this.key} isValid: ${this.isValid()}`);
         console.log(this.getAbsoluteDotPositions().map(row => row.join(' ')).join("\n"));
     }
 }
@@ -259,9 +260,9 @@ class RandomBlock {
 
     static makeRandomBlock(id) {
         return new Block(
-            rand(CUBE_SIDE_LENGTH),
-            rand(CUBE_SIDE_LENGTH),
-            rand(CUBE_SIDE_LENGTH),
+            rand(),
+            rand(),
+            rand(),
             rand(4),
             rand(4),
             rand(4),
@@ -272,7 +273,7 @@ class RandomBlock {
     // recursively calls self if the new block is invalid
     static makeValidRandomBlock(id) {
         let block = RandomBlock.makeRandomBlock(id);
-        return block.isValid(CUBE_SIDE_LENGTH) ? block : RandomBlock.makeValidRandomBlock(id);
+        return block.isValid() ? block : RandomBlock.makeValidRandomBlock(id);
     }
 }
 
@@ -285,24 +286,23 @@ Cube (i can haz blocks pls)
 */
 
 class Cube {
-    constructor(s) {
+    constructor(s = CUBE_SIDE_LENGTH) {
         this.s = s;
         this.matrix = Array(s).fill().map(() => Array(s).fill().map(() => Array(s).fill(0)));
+        this.adjacentZeros = Array(s).fill().map(() => Array(s).fill().map(() => Array(s).fill(0)));
         this.blocks = {};
     }
 
-    tryAddBlock(block) {
-        return this.isValidBlockPlacement(block) && this.placeBlock(block);
+    numBlocks() {
+        return Object.keys(this.blocks).length;
+    }
+
+    isComplete() {
+        return Object.keys(this.blocks).length >= NUM_BLOCKS - 5;
     }
 
     isValidBlockPlacement(block) {
-        var valid = true;
-        block.getAbsoluteDotPositions().forEach(pt => {
-            if (this.matrix[pt[0]][pt[1]][pt[2]]) {
-                valid = false;
-            }
-        });
-        return valid;
+        return block.getAbsoluteDotPositions().every(pt => !this.matrix[pt[0]][pt[1]][pt[2]]);
     }
 
     placeBlock(block) {
@@ -322,8 +322,51 @@ class Cube {
         }
     }
 
+    getRandomBlockId() {
+        var ids = Object.keys(this.blocks);
+        return ids[rand(ids.length)];
+    }
+
+    removeRandomBlocks() {
+        const total = this.numBlocks();
+        const third = Math.ceil(total / 3);
+        let i = 0;
+        while (i++ < third) {
+            this.removeBlock(this.getRandomBlockId());
+        }
+    }
+
+    countOpeningsAroundBlock(block) {
+        block.openings = block.getAbsoluteDotPositions()
+            .map(p => this.countOpeningsAroundPoint(p[0], p[1], p[2]))
+            .reduce((a, b) => a + b);
+        return block;
+    }
+
+    countOpeningsAroundPoint(x, y, z) {
+        var n = 0;
+        let m = this.matrix;
+
+        if (x + 1 < CUBE_SIDE_LENGTH && x + 1 >= 0 && m[x + 1][y][z] == 0) n++;
+        if (x - 1 < CUBE_SIDE_LENGTH && x - 1 >= 0 && m[x - 1][y][z] == 0) n++;
+        if (y + 1 < CUBE_SIDE_LENGTH && y + 1 >= 0 && m[x][y + 1][z] == 0) n++;
+        if (y - 1 < CUBE_SIDE_LENGTH && y - 1 >= 0 && m[x][y - 1][z] == 0) n++;
+        if (z + 1 < CUBE_SIDE_LENGTH && z + 1 >= 0 && m[x][y][z + 1] == 0) n++;
+        if (z - 1 < CUBE_SIDE_LENGTH && z - 1 >= 0 && m[x][y][z - 1] == 0) n++;
+
+        return n;
+    }
+
+    countOpenings() {
+
+    }
+
+    tryAddBlock(block) {
+        return this.isValidBlockPlacement(block) && this.placeBlock(block);
+    }
+
     getCompleteness() {
-        const numUsedBlocks = Object.keys(this.blocks).length;
+        const numUsedBlocks = this.numBlocks();
         return `${numUsedBlocks}/${NUM_BLOCKS} t-tetracubes ---- ${numUsedBlocks * DOTS_PER_BLOCK}/${NUM_BLOCKS * DOTS_PER_BLOCK} squrxls`;
     }
 
@@ -341,8 +384,17 @@ class Cube {
     }
 }
 
-// 54 unique characters (for simpler console output)
-const ids = 'A;lk2570CDEFGHIJKLM9gv83m[x]abcdefgBU@#$z'.split('');
+
+const ids = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz123456789!@#$%&*'.split('');
+
+function randChar() {
+    return ids[rand(ids.length)];
+}
+
+function newRandChar(chars) {
+    var char = randChar();
+    return chars.includes(char) ? newRandChar(chars) : char;
+}
 
 /*
 
@@ -350,14 +402,57 @@ void main()
 
 */
 
-function makeAndAddBlock(cube, blockId, tries = 0) {
-    var block = new RandomBlock(blockId);
+function makeBlocks(cube) {
 
-    if (cube.tryAddBlock(block)) {
+    let nextBlockId;
+    let killSwitch = false;
+
+    while (!cube.isComplete() && !killSwitch) {
+        nextBlockId = newRandChar(Object.keys(cube.blocks));
+
+        if (!placeBestBlock(cube, nextBlockId)) {
+
+            var mostExposedBlocks = Object.values(cube.blocks)
+                .map(block => cube.countOpeningsAroundBlock(block), cube)
+                .sort((a, b) => b.openings - a.openings);
+
+            console.log('*** Removing 4 edge blocks. ***');
+
+            for (var i = 0; i < 4; i++) {
+                cube.removeBlock(mostExposedBlocks[i].id);
+            }
+
+            console.log(`Cube now has ${cube.numBlocks()} blocks. Continuing...`);
+        }
+    }
+
+    console.log('you won at tetracube!');
+
+    cube.log();
+
+}
+
+function placeBestBlock(cube, blockId, tries = 1, batchSize = NUM_TEST_BLOCKS) {
+    let testBlocks = Array(batchSize).fill()
+        .map(() => new RandomBlock(blockId))
+        .filter(block => cube.isValidBlockPlacement(block))
+        .map(block => cube.countOpeningsAroundBlock(block), cube)
+        .sort((a, b) => a.openings - b.openings);
+
+    if (!testBlocks.length) {
+        console.log(`Created a batch of blocks but none fit (${tries})`);
+    } else {
+        console.log(`Cube has ${cube.numBlocks()} blocks, created batch of ${testBlocks.length} valid blocks, adding the snuggest fit.`);
+    }
+
+    if (testBlocks.length && cube.tryAddBlock(testBlocks[0])) {
         return true;
     } else {
         if (tries < MAX_TRIES) {
-            return makeAndAddBlock(cube, blockId, tries++);
+            return placeBestBlock(cube, blockId, ++tries);
+        } else {
+            console.log(`Tried too many times...`);
+            return false;
         }
     }
 }
@@ -365,22 +460,10 @@ function makeAndAddBlock(cube, blockId, tries = 0) {
 $(document).ready(function() {
 
     // create a cube
-    var cube = new Cube(CUBE_SIDE_LENGTH);
-    cube.log();
+    var cube = new Cube();
 
     // add some blocks
-    ids.forEach(id => {
-        if (makeAndAddBlock(cube, id)) {
-            console.log(`Placed ${id}`);
-        }
-    });
-    cube.log();
-
-    // remove all the blocks
-    // for (var blockId in cube.blocks) {
-    //     cube.removeBlock(blockId);
-    // }
-    // cube.log();
+    makeBlocks(cube);
 
 });
 
