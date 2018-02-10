@@ -45,6 +45,7 @@ const DOTS_PER_BLOCK = 4;
 const NUM_BLOCKS = 54;
 const NUM_TEST_BLOCKS = 100;
 const MAX_TRIES = 20;
+const NUM_REMOVE = 3;
 
 
 
@@ -441,9 +442,9 @@ function makeBlocks(cube) {
                 .map(block => cube.countOpeningsAroundBlock(block), cube)
                 .sort((a, b) => b.openings - a.openings);
 
-            console.log('*** Removing 4 edge blocks. ***');
+            console.log(`*** Removing ${NUM_REMOVE} edge blocks. ***`);
 
-            for (var i = 0; i < 4; i++) {
+            for (var i = 0; i < NUM_REMOVE; i++) {
                 cube.removeBlock(mostExposedBlocks[i].id);
             }
 
@@ -465,7 +466,9 @@ function placeBestBlock(cube, blockId, tries = 1, batchSize = NUM_TEST_BLOCKS) {
         .sort((a, b) => a.openings - b.openings);
 
     if (!testBlocks.length) {
-        console.log(`Created a batch of blocks but none fit (${tries})`);
+        if (tries % 10 == 0) {
+            console.log(`Created a batch of blocks but none fit (${tries})`);
+        }
     } else {
         console.log(`Cube has ${cube.numBlocks()} blocks, created batch of ${testBlocks.length} valid blocks, adding the snuggest fit.`);
     }
