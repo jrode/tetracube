@@ -289,7 +289,7 @@ class Cube {
     constructor(s = CUBE_SIDE_LENGTH) {
         this.s = s;
         this.matrix = Array(s).fill().map(() => Array(s).fill().map(() => Array(s).fill(0)));
-        this.adjacentZeros = Array(s).fill().map(() => Array(s).fill().map(() => Array(s).fill(0)));
+        this.adjacentSpacesCount = Array(s).fill().map(() => Array(s).fill().map(() => Array(s).fill(-1)));
         this.blocks = {};
     }
 
@@ -298,7 +298,7 @@ class Cube {
     }
 
     isComplete() {
-        return Object.keys(this.blocks).length >= NUM_BLOCKS - 5;
+        return Object.keys(this.blocks).length >= NUM_BLOCKS;
     }
 
     isValidBlockPlacement(block) {
@@ -357,12 +357,37 @@ class Cube {
         return n;
     }
 
-    countOpenings() {
+    hasBlockPlacementIntegrity() {
+        var hasAnySingleSpaces = false;
+        var hasAnyDoubleSpaces = false; // TODO
 
+        this.matrix.forEach((layer, x) => {
+            layer.forEach((row, y) => {
+                row.forEach((val, z) => {
+                    if (!this.matrix[x][y][z]) {
+                        this.adjacentSpacesCount[x][y][z] = this.countOpeningsAroundPoint(x, y, z);
+                        if (this.adjacentSpacesCount[x][y][z] == 0) {
+                            hasAnySingleSpaces = true;
+                            return false;
+                        }
+                    } else {
+                        this.adjacentSpacesCount[x][y][z] = 'x';
+                    }
+                });
+            });
+        });
+        return !hasAnySingleSpaces && !hasAnyDoubleSpaces;
     }
 
     tryAddBlock(block) {
-        return this.isValidBlockPlacement(block) && this.placeBlock(block);
+        if (this.isValidBlockPlacement(block) && this.placeBlock(block)) {
+            if (!this.hasBlockPlacementIntegrity()) {
+                console.log('BAD PLACEMENT, REMOVING...');
+                this.removeBlock(block.id);
+                return false;
+            }
+        }
+        return true;
     }
 
     getCompleteness() {
