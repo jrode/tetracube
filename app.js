@@ -451,8 +451,11 @@ class Cube {
 
         var state = this.isComplete() ? 'success' : 'error';
 
+        var tempShowLogs = showLogs;
+        showLogs = true;
         domLog(cubeOutput, state);
         domLog(this.getCompleteness() + '<br><br>', state);
+        showLogs = tempShowLogs;
     }
 }
 
@@ -518,6 +521,7 @@ function placeBestBlock(cube, blockId, tries = 1, batchSize = NUM_TEST_BLOCKS) {
 }
 
 function domLog(str, status = 'success', replaceSpaces = false) {
+    if (!showLogs) return;
     // log to console
     //console.log(str);
 
@@ -537,7 +541,7 @@ function domStatus(str) {
     statusDiv.text(`Status: ${str}`);
 }
 
-function runStart() {
+function runStart(event) {
 
     // stop current loop if running
     if (runInterval) {
@@ -565,8 +569,13 @@ function runStop(event, success = false) {
     domLog(`${message} ${mainCube.getElapsedSeconds()}!<br>Cube state:`, success ? 'success' : 'error');
 }
 
+function toggleLogs(event) {
+    showLogs = !showLogs;
+}
+
 let messagesDiv, statusDiv;
 let runInterval, mainCube;
+let showLogs = true;
 
 $(document).ready(function() {
     // select dom elements
@@ -579,6 +588,7 @@ $(document).ready(function() {
     // bind buttons
     $('#start').click(runStart);
     $('#stop').click(runStop);
+    $('#toggleLogs').change(toggleLogs);
 });
 
 
