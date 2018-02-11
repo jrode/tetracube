@@ -249,8 +249,8 @@ class Block {
     }
 
     log() {
-        console.log(`id: ${this.id} xyx: ${this.x}${this.y}${this.z} rst: ${this.key} isValid: ${this.isValid()}`);
-        console.log(this.getAbsoluteDotPositions().map(row => row.join(' ')).join("\n"));
+        domLog(`id: ${this.id} xyx: ${this.x}${this.y}${this.z} rst: ${this.key} isValid: ${this.isValid()}`);
+        domLog(this.getAbsoluteDotPositions().map(row => row.join(' ')).join("\n"));
     }
 }
 
@@ -383,7 +383,7 @@ class Cube {
     tryAddBlock(block) {
         if (this.isValidBlockPlacement(block) && this.placeBlock(block)) {
             if (!this.hasBlockPlacementIntegrity()) {
-                console.log('BAD PLACEMENT, REMOVING...');
+                domLog('BAD PLACEMENT, REMOVING...');
                 this.removeBlock(block.id);
                 return false;
             }
@@ -398,15 +398,13 @@ class Cube {
 
     log() {
         this.matrix.forEach((layer, x) => {
-            console.log(`layer ${x}`);
+            domLog(`layer ${x}`);
             layer.forEach((row, y) => {
-                console.log(`l${x} r${y} ${JSON.stringify(row)}`);
+                domLog(`l${x} r${y} ${JSON.stringify(row)}`);
             });
         });
 
-        console.log('blocks:', this.blocks);
-
-        console.log(this.getCompleteness());
+        domLog(this.getCompleteness());
     }
 }
 
@@ -442,17 +440,17 @@ function makeBlocks(cube) {
                 .map(block => cube.countOpeningsAroundBlock(block), cube)
                 .sort((a, b) => b.openings - a.openings);
 
-            console.log(`*** Removing ${NUM_REMOVE} edge blocks. ***`);
+            domLog(`*** Removing ${NUM_REMOVE} edge blocks. ***`);
 
             for (var i = 0; i < NUM_REMOVE; i++) {
                 cube.removeBlock(mostExposedBlocks[i].id);
             }
 
-            console.log(`Cube now has ${cube.numBlocks()} blocks. Continuing...`);
+            domLog(`Cube now has ${cube.numBlocks()} blocks. Continuing...`);
         }
     }
 
-    console.log('you won at tetracube!');
+    domLog('you won at tetracube!');
 
     cube.log();
 
@@ -467,10 +465,10 @@ function placeBestBlock(cube, blockId, tries = 1, batchSize = NUM_TEST_BLOCKS) {
 
     if (!testBlocks.length) {
         if (tries % 10 == 0) {
-            console.log(`Created a batch of blocks but none fit (${tries})`);
+            domLog(`Created a batch of blocks but none fit (${tries})`);
         }
     } else {
-        console.log(`Cube has ${cube.numBlocks()} blocks, created batch of ${testBlocks.length} valid blocks, adding the snuggest fit.`);
+        domLog(`Cube has ${cube.numBlocks()} blocks, created batch of ${testBlocks.length} valid blocks, adding the snuggest fit.`);
     }
 
     if (testBlocks.length && cube.tryAddBlock(testBlocks[0])) {
@@ -479,10 +477,14 @@ function placeBestBlock(cube, blockId, tries = 1, batchSize = NUM_TEST_BLOCKS) {
         if (tries < MAX_TRIES) {
             return placeBestBlock(cube, blockId, ++tries);
         } else {
-            console.log(`Tried too many times...`);
+            domLog(`Tried too many times...`);
             return false;
         }
     }
+}
+
+function domLog(str) {
+    console.log(str);
 }
 
 $(document).ready(function() {
