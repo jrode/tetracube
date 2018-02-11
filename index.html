@@ -18,12 +18,12 @@
         <p>This solver will attempt to brute-force a solution by:</p>
         <ol>
             <li>Generating batches of randomized blocks (the positions and rotation values are randomized).</li>
-            <li>Rank these blocks based on highest surface contact if placed into the cube.</li>
-            <li>Place the highest ranked block into the cube.</li>
-            <li>Validate that the placement did not create enclosed spaces within the cube.</li>
-            <li>Remove the last invalid placement, otherwise continue by creating a new batch of block candidates.</li>
-            <li>Repeat steps 1-5 over a maximum number of retries.</li>
-            <li>If no blocks can be placed after retry limit, remove some of the lowest ranked surface-touching blocks then continue from step 1.</li>
+            <li>Ranking these blocks based on highest surface contact if placed into the cube.</li>
+            <li>Placing the highest ranked block into the cube.</li>
+            <li>Validating that the placement did not create enclosed spaces within the cube.</li>
+            <li>Removing the last invalid placement, otherwise continuing by creating a new batch of block candidates.</li>
+            <li>Repeating steps 1-5 over a maximum number of retries.</li>
+            <li>Removing some of the lowest ranked surface-touching blocks when no blocks can be placed after the retry limit.</li>
         </ol>
     </div>
 

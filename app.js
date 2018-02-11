@@ -46,14 +46,14 @@ const DOTS_PER_BLOCK = 4;
 const NUM_BLOCKS = 54;
 
 // solver params
-const NUM_TEST_BLOCKS = 1000;
-const MAX_TRIES = 25;
+const NUM_TEST_BLOCKS = 2000;
+const MAX_TRIES = 10;
 const NUM_REMOVE = 2;
 const DOUBLE_NUM_REMOVE_AFTER = 100;
 const MAX_NUM_REMOVE = 64;
 
 // run loop params
-const RUN_LOOP_INTERVAL = 10;
+const RUN_LOOP_INTERVAL = 1;
 
 /*
 
