@@ -3,14 +3,18 @@ body {
     font-family: monospace, arial, sans-serif;
 }
 
-p.error {
+#messages {
+	margin-top: 12px;
+}
+
+.error {
 	color: #bb3333;
 }
 
-p.status {
-	color: #999999;
+.status {
+	color: #aaaaaa;
 }
 
-p.success {
+.success {
 	color: #33bb33;
 }

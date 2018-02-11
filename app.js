@@ -46,12 +46,14 @@ const DOTS_PER_BLOCK = 4;
 const NUM_BLOCKS = 54;
 
 // solver params
-const NUM_TEST_BLOCKS = 100;
-const MAX_TRIES = 20;
-const NUM_REMOVE = 3;
+const NUM_TEST_BLOCKS = 1000;
+const MAX_TRIES = 25;
+const NUM_REMOVE = 2;
+const DOUBLE_NUM_REMOVE_AFTER = 100;
+const MAX_NUM_REMOVE = 16;
 
 // run loop params
-const RUN_LOOP_INTERVAL = 200;
+const RUN_LOOP_INTERVAL = 10;
 
 /*
 
@@ -297,6 +299,8 @@ class Cube {
         this.adjacentSpacesCount = Array(s).fill().map(() => Array(s).fill().map(() => Array(s).fill(-1)));
         this.blocks = {};
         this.startTime = Date.now();
+        this.numRemove = NUM_REMOVE;
+        this.removeCount = 0;
     }
 
     numBlocks() {
@@ -304,7 +308,11 @@ class Cube {
     }
 
     isComplete() {
-        return Object.keys(this.blocks).length >= NUM_BLOCKS;
+        const complete = this.numBlocks() >= NUM_BLOCKS;
+        if (complete && !this.stopTime) {
+            this.stopTime = Date.now();
+        }
+        return complete;
     }
 
     isValidBlockPlacement(block) {
@@ -340,6 +348,27 @@ class Cube {
         while (i++ < third) {
             this.removeBlock(this.getRandomBlockId());
         }
+    }
+
+    removeEdgeBlocks() {
+        this.removeCount++;
+
+        // double the number of blocks removed after X fails
+        if (this.removeCount % DOUBLE_NUM_REMOVE_AFTER == 0 && this.numRemove < MAX_NUM_REMOVE) {
+            this.numRemove *= 2;
+        }
+
+        var mostExposedBlocks = Object.values(this.blocks)
+            .map(block => this.countOpeningsAroundBlock(block))
+            .sort((a, b) => b.openings - a.openings);
+
+        domLog(`Removing ${this.numRemove} edge blocks.`, 'error');
+
+        for (var i = 0; i < this.numRemove; i++) {
+            this.removeBlock(mostExposedBlocks[i].id);
+        }
+
+        domLog(`Cube now has ${this.numBlocks()} blocks. Continuing...`, 'warning');
     }
 
     countOpeningsAroundBlock(block) {
@@ -398,11 +427,12 @@ class Cube {
 
     getCompleteness() {
         const numUsedBlocks = this.numBlocks();
-        return `${numUsedBlocks}/${NUM_BLOCKS} t-tetracube blocks, occupying ${numUsedBlocks * DOTS_PER_BLOCK}/${NUM_BLOCKS * DOTS_PER_BLOCK} spaces.`;
+        return `${numUsedBlocks}/${NUM_BLOCKS} t-tetracubes in ${numUsedBlocks * DOTS_PER_BLOCK}/${NUM_BLOCKS * DOTS_PER_BLOCK} spaces after ${this.getElapsedSeconds()}.`;
     }
 
     getElapsedSeconds() {
-        var elapsed = (Date.now() - this.startTime) / 1000;
+        var stopTime = this.stopTime || Date.now();
+        var elapsed = (stopTime - this.startTime) / 1000;
         return `${elapsed} seconds`;
     }
 
@@ -417,14 +447,12 @@ class Cube {
                 cubeOutput += `row ${y}: ${row.join(' ')}<br>`;
             });
         });
-        cubeOutput += '<br>^ Zeroes are empty spaces, anything else is a block identifier.';
+        cubeOutput += '<br>^ Zeroes are empty spaces, anything else is a block identifier.<br><br>';
 
-        domLog(cubeOutput);
-        domLog(this.getCompleteness());
+        var state = this.isComplete() ? 'success' : 'error';
 
-        if (this.isComplete()) {
-            domLog(`Solved in ${this.getElapsedSeconds()}!`);
-        }
+        domLog(cubeOutput, state);
+        domLog(this.getCompleteness() + '<br><br>', state);
     }
 }
 
@@ -449,21 +477,16 @@ void main()
 function makeOneBlock(cube) {
     nextBlockId = newRandChar(Object.keys(cube.blocks));
 
+    if (cube.isComplete()) {
+        runStop(false, true);
+        domStatus(cube.getCompleteness());
+        return false;
+    }
+
     domStatus(cube.getCompleteness());
 
     if (!placeBestBlock(cube, nextBlockId)) {
-
-        var mostExposedBlocks = Object.values(cube.blocks)
-            .map(block => cube.countOpeningsAroundBlock(block), cube)
-            .sort((a, b) => b.openings - a.openings);
-
-        domLog(`Removing ${NUM_REMOVE} edge blocks.`, 'error');
-
-        for (var i = 0; i < NUM_REMOVE; i++) {
-            cube.removeBlock(mostExposedBlocks[i].id);
-        }
-
-        domLog(`Cube now has ${cube.numBlocks()} blocks. Continuing...`, 'warning');
+        cube.removeEdgeBlocks();
     }
 }
 
@@ -479,7 +502,7 @@ function placeBestBlock(cube, blockId, tries = 1, batchSize = NUM_TEST_BLOCKS) {
             domLog(`Created a batch of blocks but none fit (${tries})`, 'error');
         }
     } else {
-        domLog(`Created batch of ${testBlocks.length} valid blocks, adding the snuggest fit.`);
+        domLog(`Created batch of ${testBlocks.length} valid blocks, adding the best fit.`);
     }
 
     if (testBlocks.length && cube.tryAddBlock(testBlocks[0])) {
@@ -507,7 +530,7 @@ function domLog(str, status = 'success', replaceSpaces = false) {
     }
 
     // output to messages div
-    messagesDiv.prepend(`<p class="${status}">${str}</p>`);
+    messagesDiv.prepend(`<div class="${status}">${str}</div>`);
 }
 
 function domStatus(str) {
@@ -534,10 +557,12 @@ function runLoop(cube) {
     }, RUN_LOOP_INTERVAL);
 }
 
-function runStop() {
+function runStop(event, success = false) {
     clearInterval(runInterval);
     mainCube.log();
-    domLog(`Solver interrupted after ${mainCube.getElapsedSeconds()}!<br>Last cube state:`, 'error');
+
+    const message = success ? 'Solved in' : 'Solver interrupted after';
+    domLog(`${message} ${mainCube.getElapsedSeconds()}!<br>Cube state:`, success ? 'success' : 'error');
 }
 
 let messagesDiv, statusDiv;
