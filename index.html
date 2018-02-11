@@ -5,7 +5,24 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-    <div id="message">Open console to see Tetracube solver output.</div>
+    <div id="controls">
+        <p id="status">Solve the tetracube</p>
+        <button id="start">Run Solver</button>
+        <button id="stop">Stop</button>
+    </div>
+    <div id="messages">
+        <p>Problem: Given a 6x6x6 empty cube and 54 t-tetracube blocks, the goal is to place the blocks within the empty spaces to form a perfect cube, with no inner spaces or outer protrusions.</p>
+        <p>This solver will attempt to brute-force a solution by:</p>
+        <ol>
+            <li>Generating batches of randomized blocks (the positions and rotation values are randomized).</li>
+            <li>Rank these blocks based on highest surface contact if placed into the cube.</li>
+            <li>Place the highest ranked block into the cube.</li>
+            <li>Validate that the placement did not create enclosed spaces within the cube.</li>
+            <li>Remove the last invalid placement, otherwise continue by creating a new batch of block candidates.</li>
+            <li>Repeat steps 1-5 over a maximum number of retries.</li>
+            <li>If no blocks can be placed after retry limit, remove some of the lowest ranked surface-touching blocks then continue from step 1.</li>
+        </ol>
+    </div>
 
     <script src="jquery-2.1.4.min.js"></script>
     <script src="app.js"></script>

@@ -1,12 +1,10 @@
-/*global $:true*/
-
-/*
+const notes = `
 
 Block, aka t-tetracube:
 
     d
-    ■
-  ■ ■ ■
+    *
+  * * *
   a b c
 
 
@@ -20,34 +18,40 @@ A 6x6x6 cube that needs to fit 54 t-tetracubes evenly:
      /     |            |
     |      |____________|           /
     |     /            /  r = 0  --/       /
-    |    /            /           /     --┴-- r = 1
+    |    /            /           /     ----- r = 1
     |   /            /
-    |  /           c/  x           /       ^
-    | /         d b/      s = 0 --/        |/ s = 1
-    |/___________a/              /         /
-           y     (0,0,0)         
+    |  /            /  x           /       ^
+    | /           c/      s = 0 --/        |/ s = 1
+    |/_________d_b/              /         /
+           y    a (0,0,0)         
 
 positions:                         /       |
-x: 0                      t = 0 --/       -┤  t = 1
+x: 0                      t = 0 --/       -|  t = 1
 y: 0                             /         |
 z: 0
 
 rotations:
 r: 0 (+1 twists on z-axis moving a where d was)
-s: 0 (+1 twists on x-axis moving d above b)      } <-- TODO: this framework should be x-y-z
+s: 0 (+1 twists on x-axis moving d above b)
 t: 0 (+1 twists on y-axis moving a above b)
 
-*/
+note:
+(0,0,0,0,0,0) is an invalid placement because "a" is outside the cube
 
+`;
 
+// cube params
 const CUBE_SIDE_LENGTH = 6;
 const DOTS_PER_BLOCK = 4;
 const NUM_BLOCKS = 54;
+
+// solver params
 const NUM_TEST_BLOCKS = 100;
 const MAX_TRIES = 20;
 const NUM_REMOVE = 3;
 
-
+// run loop params
+const RUN_LOOP_INTERVAL = 200;
 
 /*
 
@@ -292,6 +296,7 @@ class Cube {
         this.matrix = Array(s).fill().map(() => Array(s).fill().map(() => Array(s).fill(0)));
         this.adjacentSpacesCount = Array(s).fill().map(() => Array(s).fill().map(() => Array(s).fill(-1)));
         this.blocks = {};
+        this.startTime = Date.now();
     }
 
     numBlocks() {
@@ -383,7 +388,7 @@ class Cube {
     tryAddBlock(block) {
         if (this.isValidBlockPlacement(block) && this.placeBlock(block)) {
             if (!this.hasBlockPlacementIntegrity()) {
-                domLog('BAD PLACEMENT, REMOVING...');
+                domLog('Last placement enclosed an empty space, removing last block...');
                 this.removeBlock(block.id);
                 return false;
             }
@@ -393,23 +398,38 @@ class Cube {
 
     getCompleteness() {
         const numUsedBlocks = this.numBlocks();
-        return `${numUsedBlocks}/${NUM_BLOCKS} t-tetracubes ---- ${numUsedBlocks * DOTS_PER_BLOCK}/${NUM_BLOCKS * DOTS_PER_BLOCK} squrxls`;
+        return `${numUsedBlocks}/${NUM_BLOCKS} t-tetracube blocks, occupying ${numUsedBlocks * DOTS_PER_BLOCK}/${NUM_BLOCKS * DOTS_PER_BLOCK} spaces.`;
+    }
+
+    getElapsedSeconds() {
+        var elapsed = (Date.now() - this.startTime) / 1000;
+        return `${elapsed} seconds`;
     }
 
     log() {
+        var cubeOutput = '';
         this.matrix.forEach((layer, x) => {
-            domLog(`layer ${x}`);
+            if (x) {
+                cubeOutput += '<br>';
+            }
+            cubeOutput += `layer ${x}:<br>`;
             layer.forEach((row, y) => {
-                domLog(`l${x} r${y} ${JSON.stringify(row)}`);
+                cubeOutput += `row ${y}: ${row.join(' ')}<br>`;
             });
         });
+        cubeOutput += '<br>^ Zeroes are empty spaces, anything else is a block identifier.';
 
+        domLog(cubeOutput);
         domLog(this.getCompleteness());
+
+        if (this.isComplete()) {
+            domLog(`Solved in ${this.getElapsedSeconds()}!`);
+        }
     }
 }
 
 
-const ids = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz123456789!@#$%&*'.split('');
+const ids = 'ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghijklmnpqrstuvwxyz123456789!@#$%&*'.split('');
 
 function randChar() {
     return ids[rand(ids.length)];
@@ -426,34 +446,25 @@ void main()
 
 */
 
-function makeBlocks(cube) {
+function makeOneBlock(cube) {
+    nextBlockId = newRandChar(Object.keys(cube.blocks));
 
-    let nextBlockId;
-    let killSwitch = false;
+    domStatus(cube.getCompleteness());
 
-    while (!cube.isComplete() && !killSwitch) {
-        nextBlockId = newRandChar(Object.keys(cube.blocks));
+    if (!placeBestBlock(cube, nextBlockId)) {
 
-        if (!placeBestBlock(cube, nextBlockId)) {
+        var mostExposedBlocks = Object.values(cube.blocks)
+            .map(block => cube.countOpeningsAroundBlock(block), cube)
+            .sort((a, b) => b.openings - a.openings);
 
-            var mostExposedBlocks = Object.values(cube.blocks)
-                .map(block => cube.countOpeningsAroundBlock(block), cube)
-                .sort((a, b) => b.openings - a.openings);
+        domLog(`Removing ${NUM_REMOVE} edge blocks.`, 'error');
 
-            domLog(`*** Removing ${NUM_REMOVE} edge blocks. ***`);
-
-            for (var i = 0; i < NUM_REMOVE; i++) {
-                cube.removeBlock(mostExposedBlocks[i].id);
-            }
-
-            domLog(`Cube now has ${cube.numBlocks()} blocks. Continuing...`);
+        for (var i = 0; i < NUM_REMOVE; i++) {
+            cube.removeBlock(mostExposedBlocks[i].id);
         }
+
+        domLog(`Cube now has ${cube.numBlocks()} blocks. Continuing...`, 'warning');
     }
-
-    domLog('you won at tetracube!');
-
-    cube.log();
-
 }
 
 function placeBestBlock(cube, blockId, tries = 1, batchSize = NUM_TEST_BLOCKS) {
@@ -465,10 +476,10 @@ function placeBestBlock(cube, blockId, tries = 1, batchSize = NUM_TEST_BLOCKS) {
 
     if (!testBlocks.length) {
         if (tries % 10 == 0) {
-            domLog(`Created a batch of blocks but none fit (${tries})`);
+            domLog(`Created a batch of blocks but none fit (${tries})`, 'error');
         }
     } else {
-        domLog(`Cube has ${cube.numBlocks()} blocks, created batch of ${testBlocks.length} valid blocks, adding the snuggest fit.`);
+        domLog(`Created batch of ${testBlocks.length} valid blocks, adding the snuggest fit.`);
     }
 
     if (testBlocks.length && cube.tryAddBlock(testBlocks[0])) {
@@ -477,24 +488,72 @@ function placeBestBlock(cube, blockId, tries = 1, batchSize = NUM_TEST_BLOCKS) {
         if (tries < MAX_TRIES) {
             return placeBestBlock(cube, blockId, ++tries);
         } else {
-            domLog(`Tried too many times...`);
+            domLog(`Tried too many times...`, 'error');
             return false;
         }
     }
 }
 
-function domLog(str) {
-    console.log(str);
+function domLog(str, status = 'success', replaceSpaces = false) {
+    // log to console
+    //console.log(str);
+
+    // replace newlines with <br>
+    str = str.replace(/(?:\r\n|\r|\n)/g, '<br>');
+
+    // optionally add nbsp's
+    if (replaceSpaces) {
+        str = str.replace(/ /g, '\u00a0');
+    }
+
+    // output to messages div
+    messagesDiv.prepend(`<p class="${status}">${str}</p>`);
 }
 
-$(document).ready(function() {
+function domStatus(str) {
+    statusDiv.text(`Status: ${str}`);
+}
+
+function runStart() {
+
+    // stop current loop if running
+    if (runInterval) {
+        runStop();
+    }
 
     // create a cube
-    var cube = new Cube();
+    mainCube = new Cube();
 
-    // add some blocks
-    makeBlocks(cube);
+    // begin runLoop
+    runLoop(mainCube);
+}
 
+function runLoop(cube) {
+    runInterval = setInterval(() => {
+        makeOneBlock(cube);
+    }, RUN_LOOP_INTERVAL);
+}
+
+function runStop() {
+    clearInterval(runInterval);
+    mainCube.log();
+    domLog(`Solver interrupted after ${mainCube.getElapsedSeconds()}!<br>Last cube state:`, 'error');
+}
+
+let messagesDiv, statusDiv;
+let runInterval, mainCube;
+
+$(document).ready(function() {
+    // select dom elements
+    messagesDiv = $('#messages');
+    statusDiv = $('#status');
+
+    // show notes
+    domLog(notes, 'warning', true);
+
+    // bind buttons
+    $('#start').click(runStart);
+    $('#stop').click(runStop);
 });
 
 

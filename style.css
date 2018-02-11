@@ -2,3 +2,15 @@ body {
     font-size: 12px;
     font-family: monospace, arial, sans-serif;
 }
+
+p.error {
+	color: #bb3333;
+}
+
+p.status {
+	color: #999999;
+}
+
+p.success {
+	color: #33bb33;
+}
