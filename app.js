@@ -50,7 +50,7 @@ const NUM_TEST_BLOCKS = 1000;
 const MAX_TRIES = 25;
 const NUM_REMOVE = 2;
 const DOUBLE_NUM_REMOVE_AFTER = 100;
-const MAX_NUM_REMOVE = 16;
+const MAX_NUM_REMOVE = 64;
 
 // run loop params
 const RUN_LOOP_INTERVAL = 10;
@@ -365,7 +365,14 @@ class Cube {
         domLog(`Removing ${this.numRemove} edge blocks.`, 'error');
 
         for (var i = 0; i < this.numRemove; i++) {
-            this.removeBlock(mostExposedBlocks[i].id);
+            if (mostExposedBlocks.length > i) {
+                this.removeBlock(mostExposedBlocks[i].id);
+            }
+        }
+
+        // reset numRemove
+        if (this.numBlocks() == 0) {
+            this.numRemove = NUM_REMOVE;
         }
 
         domLog(`Cube now has ${this.numBlocks()} blocks. Continuing...`, 'warning');
