@@ -545,7 +545,7 @@ function runStart(event) {
 
     // stop current loop if running
     if (runInterval) {
-        runStop();
+        runStop(false, false);
     }
 
     // create a cube
