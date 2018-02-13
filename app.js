@@ -46,9 +46,9 @@ const DOTS_PER_BLOCK = 4;
 const NUM_BLOCKS = 54;
 
 // solver params
-const NUM_TEST_BLOCKS = 2000;
-const MAX_TRIES = 10;
-const NUM_REMOVE = 2;
+const NUM_TEST_BLOCKS = 1800;
+const MAX_TRIES = 12;
+const NUM_REMOVE = 3;
 const DOUBLE_NUM_REMOVE_AFTER = 100;
 const MAX_NUM_REMOVE = 64;
 
@@ -399,26 +399,40 @@ class Cube {
         return n;
     }
 
+    sumAdjacentSpaces(x, y, z) {
+        return (x + 1 < CUBE_SIDE_LENGTH && x + 1 >= 0 && this.adjacentSpacesCount[x + 1][y][z] != 'x' && this.adjacentSpacesCount[x + 1][y][z])
+             + (x - 1 < CUBE_SIDE_LENGTH && x - 1 >= 0 && this.adjacentSpacesCount[x - 1][y][z] != 'x' && this.adjacentSpacesCount[x - 1][y][z])
+             + (y + 1 < CUBE_SIDE_LENGTH && y + 1 >= 0 && this.adjacentSpacesCount[x][y + 1][z] != 'x' && this.adjacentSpacesCount[x][y + 1][z])
+             + (y - 1 < CUBE_SIDE_LENGTH && y - 1 >= 0 && this.adjacentSpacesCount[x][y - 1][z] != 'x' && this.adjacentSpacesCount[x][y - 1][z])
+             + (z + 1 < CUBE_SIDE_LENGTH && z + 1 >= 0 && this.adjacentSpacesCount[x][y][z + 1] != 'x' && this.adjacentSpacesCount[x][y][z + 1])
+             + (z - 1 < CUBE_SIDE_LENGTH && z - 1 >= 0 && this.adjacentSpacesCount[x][y][z - 1] != 'x' && this.adjacentSpacesCount[x][y][z - 1]);
+    }
+
     hasBlockPlacementIntegrity() {
-        var hasAnySingleSpaces = false;
-        var hasAnyDoubleSpaces = false; // TODO
+        let checkPoints = [];
 
         this.matrix.forEach((layer, x) => {
             layer.forEach((row, y) => {
                 row.forEach((val, z) => {
-                    if (!this.matrix[x][y][z]) {
-                        this.adjacentSpacesCount[x][y][z] = this.countOpeningsAroundPoint(x, y, z);
-                        if (this.adjacentSpacesCount[x][y][z] == 0) {
-                            hasAnySingleSpaces = true;
-                            return false;
-                        }
+                    // point is occupied
+                    if (val) {
+                        this.adjacentSpacesCount[x][y][z] = false;
                     } else {
-                        this.adjacentSpacesCount[x][y][z] = 'x';
+                        this.adjacentSpacesCount[x][y][z] = this.countOpeningsAroundPoint(x, y, z);
+                        checkPoints.push({x, y, z});
                     }
                 });
             });
         });
-        return !hasAnySingleSpaces && !hasAnyDoubleSpaces;
+
+        return !checkPoints.some(p => {
+            const {x, y, z} = p;
+            const emptyNeighbors = this.adjacentSpacesCount[x][y][z];
+
+            return (emptyNeighbors == 0) // single enclosed space
+                || (emptyNeighbors == 1 && this.sumAdjacentSpaces(x, y, z) == 1)  // any two connected enclosed spaces
+                || (emptyNeighbors == 2 && this.sumAdjacentSpaces(x, y, z) == 2); // any three connected enclosed spaces
+        });
     }
 
     tryAddBlock(block) {
