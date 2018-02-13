@@ -49,7 +49,7 @@ const NUM_BLOCKS = 54;
 const NUM_TEST_BLOCKS = 1800;
 const MAX_TRIES = 12;
 const NUM_REMOVE = 3;
-const DOUBLE_NUM_REMOVE_AFTER = 100;
+const DOUBLE_NUM_REMOVE_AFTER = 80;
 
 // run loop params
 const RUN_LOOP_INTERVAL = 0;
@@ -388,23 +388,31 @@ class Cube {
         var n = 0;
         let m = this.matrix;
 
-        if (x + 1 < CUBE_SIDE_LENGTH && x + 1 >= 0 && m[x + 1][y][z] == 0) n++;
-        if (x - 1 < CUBE_SIDE_LENGTH && x - 1 >= 0 && m[x - 1][y][z] == 0) n++;
-        if (y + 1 < CUBE_SIDE_LENGTH && y + 1 >= 0 && m[x][y + 1][z] == 0) n++;
-        if (y - 1 < CUBE_SIDE_LENGTH && y - 1 >= 0 && m[x][y - 1][z] == 0) n++;
-        if (z + 1 < CUBE_SIDE_LENGTH && z + 1 >= 0 && m[x][y][z + 1] == 0) n++;
-        if (z - 1 < CUBE_SIDE_LENGTH && z - 1 >= 0 && m[x][y][z - 1] == 0) n++;
+        if (this.isIn(x + 1) && m[x + 1][y][z] == 0) n++;
+        if (this.isIn(x - 1) && m[x - 1][y][z] == 0) n++;
+        if (this.isIn(y + 1) && m[x][y + 1][z] == 0) n++;
+        if (this.isIn(y - 1) && m[x][y - 1][z] == 0) n++;
+        if (this.isIn(z + 1) && m[x][y][z + 1] == 0) n++;
+        if (this.isIn(z - 1) && m[x][y][z - 1] == 0) n++;
 
         return n;
     }
 
     sumAdjacentSpaces(x, y, z) {
-        return (x + 1 < CUBE_SIDE_LENGTH && x + 1 >= 0 && this.adjacentSpacesCount[x + 1][y][z] != 'x' && this.adjacentSpacesCount[x + 1][y][z])
-             + (x - 1 < CUBE_SIDE_LENGTH && x - 1 >= 0 && this.adjacentSpacesCount[x - 1][y][z] != 'x' && this.adjacentSpacesCount[x - 1][y][z])
-             + (y + 1 < CUBE_SIDE_LENGTH && y + 1 >= 0 && this.adjacentSpacesCount[x][y + 1][z] != 'x' && this.adjacentSpacesCount[x][y + 1][z])
-             + (y - 1 < CUBE_SIDE_LENGTH && y - 1 >= 0 && this.adjacentSpacesCount[x][y - 1][z] != 'x' && this.adjacentSpacesCount[x][y - 1][z])
-             + (z + 1 < CUBE_SIDE_LENGTH && z + 1 >= 0 && this.adjacentSpacesCount[x][y][z + 1] != 'x' && this.adjacentSpacesCount[x][y][z + 1])
-             + (z - 1 < CUBE_SIDE_LENGTH && z - 1 >= 0 && this.adjacentSpacesCount[x][y][z - 1] != 'x' && this.adjacentSpacesCount[x][y][z - 1]);
+        return (this.isIn(x + 1) && this.isNotOccupied(x + 1, y, z) && this.adjacentSpacesCount[x + 1][y][z])
+             + (this.isIn(x - 1) && this.isNotOccupied(x - 1, y, z) && this.adjacentSpacesCount[x - 1][y][z])
+             + (this.isIn(y + 1) && this.isNotOccupied(x, y + 1, z) && this.adjacentSpacesCount[x][y + 1][z])
+             + (this.isIn(y - 1) && this.isNotOccupied(x, y - 1, z) && this.adjacentSpacesCount[x][y - 1][z])
+             + (this.isIn(z + 1) && this.isNotOccupied(x, y, z + 1) && this.adjacentSpacesCount[x][y][z + 1])
+             + (this.isIn(z - 1) && this.isNotOccupied(x, y, z - 1) && this.adjacentSpacesCount[x][y][z - 1]);
+    }
+
+    isIn(n) {
+        return n < this.s && n >= 0;
+    }
+
+    isNotOccupied(x, y, z) {
+        return this.adjacentSpacesCount[x][y][z] !== false;
     }
 
     hasBlockPlacementIntegrity() {
