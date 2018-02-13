@@ -50,10 +50,9 @@ const NUM_TEST_BLOCKS = 1800;
 const MAX_TRIES = 12;
 const NUM_REMOVE = 3;
 const DOUBLE_NUM_REMOVE_AFTER = 100;
-const MAX_NUM_REMOVE = 64;
 
 // run loop params
-const RUN_LOOP_INTERVAL = 1;
+const RUN_LOOP_INTERVAL = 0;
 
 /*
 
@@ -299,7 +298,7 @@ class Cube {
         this.adjacentSpacesCount = Array(s).fill().map(() => Array(s).fill().map(() => Array(s).fill(-1)));
         this.blocks = {};
         this.startTime = Date.now();
-        this.numRemove = NUM_REMOVE;
+        this.lastNumRemove = NUM_REMOVE;
         this.removeCount = 0;
     }
 
@@ -352,27 +351,27 @@ class Cube {
 
     removeEdgeBlocks() {
         this.removeCount++;
+        let numRemove = NUM_REMOVE;
 
         // double the number of blocks removed after X fails
-        if (this.removeCount % DOUBLE_NUM_REMOVE_AFTER == 0 && this.numRemove < MAX_NUM_REMOVE) {
-            this.numRemove *= 2;
+        if (this.removeCount % DOUBLE_NUM_REMOVE_AFTER == 0) {
+            numRemove = this.lastNumRemove *= 2;
         }
 
         var mostExposedBlocks = Object.values(this.blocks)
             .map(block => this.countOpeningsAroundBlock(block))
             .sort((a, b) => b.openings - a.openings);
 
-        domLog(`Removing ${this.numRemove} edge blocks.`, 'error');
+        domLog(`Removing ${numRemove} edge blocks.`, 'error');
 
-        for (var i = 0; i < this.numRemove; i++) {
+        for (var i = 0; i < numRemove; i++) {
             if (mostExposedBlocks.length > i) {
                 this.removeBlock(mostExposedBlocks[i].id);
             }
         }
 
-        // reset numRemove
         if (this.numBlocks() == 0) {
-            this.numRemove = NUM_REMOVE;
+            this.lastNumRemove = NUM_REMOVE;
         }
 
         domLog(`Cube now has ${this.numBlocks()} blocks. Continuing...`, 'warning');
